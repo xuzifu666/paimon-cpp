@@ -18,7 +18,7 @@
 
 Paimon C++ is a high-performance C++ implementation of [Apache Paimon](https://paimon.apache.org). Paimon C++ aims to provide a native, high-performance and extensible implementation that allows native engines to access the Paimon datalake format with maximum efficiency.
 
-## What's in the Paimon C++ library
+## What's in a Paimon C++ library
 
 * Write: Paimon append table and primary key table write (without compaction).
 * Commit: Paimon append table commit. (Note: Limited support — only works for simple append-only tables; table with compaction, index, changelog, and stats are not supported.)
