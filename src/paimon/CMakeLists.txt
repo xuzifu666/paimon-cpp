@@ -145,6 +145,7 @@ set(PAIMON_COMMON_SRCS
 
 set(PAIMON_CORE_SRCS
     core/append/append_only_writer.cpp
+    core/append/bucketed_append_compact_manager.cpp
     core/casting/binary_to_string_cast_executor.cpp
     core/casting/boolean_to_decimal_cast_executor.cpp
     core/casting/boolean_to_numeric_cast_executor.cpp
@@ -256,6 +257,7 @@ set(PAIMON_CORE_SRCS
     core/operation/read_context.cpp
     core/operation/scan_context.cpp
     core/operation/write_context.cpp
+    core/operation/write_restore.cpp
     core/postpone/postpone_bucket_writer.cpp
     core/schema/arrow_schema_validator.cpp
     core/schema/schema_manager.cpp
@@ -488,6 +490,7 @@ if(PAIMON_BUILD_TESTS)
     add_paimon_test(core_test
                     SOURCES
                     core/append/append_only_writer_test.cpp
+                    core/append/bucketed_append_compact_manager_test.cpp
                     core/casting/cast_executor_factory_test.cpp
                     core/casting/cast_executor_test.cpp
                     core/casting/casted_row_test.cpp
@@ -500,6 +503,7 @@ if(PAIMON_BUILD_TESTS)
                     core/core_options_test.cpp
                     core/deletionvectors/apply_deletion_vector_batch_reader_test.cpp
                     core/deletionvectors/bitmap_deletion_vector_test.cpp
+                    core/deletionvectors/bucketed_dv_maintainer_test.cpp
                     core/deletionvectors/deletion_vector_test.cpp
                     core/deletionvectors/deletion_vectors_index_file_test.cpp
                     core/index/index_in_data_file_dir_path_factory_test.cpp
@@ -561,6 +565,7 @@ if(PAIMON_BUILD_TESTS)
                     core/mergetree/merge_tree_writer_test.cpp
                     core/mergetree/sorted_run_test.cpp
                     core/migrate/file_meta_utils_test.cpp
+                    core/operation/metrics/compaction_metrics_test.cpp
                     core/operation/data_evolution_file_store_scan_test.cpp
                     core/operation/data_evolution_split_read_test.cpp
                     core/operation/key_value_file_store_write_test.cpp
@@ -581,6 +586,7 @@ if(PAIMON_BUILD_TESTS)
                     core/operation/raw_file_split_read_test.cpp
                     core/operation/read_context_test.cpp
                     core/operation/scan_context_test.cpp
+                    core/operation/write_restore_test.cpp
                     core/operation/write_context_test.cpp
                     core/partition/partition_statistics_test.cpp
                     core/postpone/postpone_bucket_writer_test.cpp

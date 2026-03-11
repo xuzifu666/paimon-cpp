@@ -92,10 +92,29 @@ std::map<std::string, HistogramStats> MetricsImpl::GetAllHistogramStats() const 
     return res;
 }
 
+void MetricsImpl::SetGauge(const std::string& metric_name, double value) {
+    std::lock_guard<std::mutex> lock(gauge_lock_);
+    gauges_[metric_name] = value;
+}
+
+Result<double> MetricsImpl::GetGauge(const std::string& metric_name) const {
+    std::lock_guard<std::mutex> lock(gauge_lock_);
+    auto it = gauges_.find(metric_name);
+    if (it != gauges_.end()) {
+        return it->second;
+    }
+    return Status::KeyError(fmt::format("metric '{}' not found", metric_name));
+}
+
+std::map<std::string, double> MetricsImpl::GetAllGauges() const {
+    std::lock_guard<std::mutex> lock(gauge_lock_);
+    return gauges_;
+}
+
 void MetricsImpl::Merge(const std::shared_ptr<Metrics>& other) {
     if (other && this != other.get()) {
+        std::map<std::string, uint64_t> other_counters = other->GetAllCounters();
         {
-            std::map<std::string, uint64_t> other_counters = other->GetAllCounters();
             std::lock_guard<std::mutex> guard(counter_lock_);
             for (const auto& kv : other_counters) {
                 auto iter = counters_.find(kv.first);
@@ -106,7 +125,18 @@ void MetricsImpl::Merge(const std::shared_ptr<Metrics>& other) {
                 }
             }
         }
-
+        std::map<std::string, double> other_gauges = other->GetAllGauges();
+        {
+            std::lock_guard<std::mutex> guard(gauge_lock_);
+            for (const auto& kv : other_gauges) {
+                auto iter = gauges_.find(kv.first);
+                if (iter == gauges_.end()) {
+                    gauges_[kv.first] = kv.second;
+                } else {
+                    gauges_[kv.first] += kv.second;
+                }
+            }
+        }
         auto other_impl = std::dynamic_pointer_cast<MetricsImpl>(other);
         if (other_impl) {
             std::vector<std::pair<std::string, std::shared_ptr<Histogram>>> other_histograms;
@@ -139,8 +169,15 @@ void MetricsImpl::Merge(const std::shared_ptr<Metrics>& other) {
 void MetricsImpl::Overwrite(const std::shared_ptr<Metrics>& other) {
     if (other && this != other.get()) {
         std::map<std::string, uint64_t> other_counters = other->GetAllCounters();
-        std::lock_guard<std::mutex> guard(counter_lock_);
-        counters_.swap(other_counters);
+        {
+            std::lock_guard<std::mutex> guard(counter_lock_);
+            counters_.swap(other_counters);
+        }
+        std::map<std::string, double> other_gauges = other->GetAllGauges();
+        {
+            std::lock_guard<std::mutex> guard(gauge_lock_);
+            gauges_.swap(other_gauges);
+        }
 
         auto other_impl = std::dynamic_pointer_cast<MetricsImpl>(other);
         std::map<std::string, std::shared_ptr<Histogram>> new_histograms;
@@ -223,6 +260,13 @@ std::string MetricsImpl::ToString() const {
         stddev_val.SetDouble(s.stddev);
         doc.AddMember(rapidjson::Value(name + ".stddev", allocator), stddev_val, allocator);
     }
+
+    std::map<std::string, double> gauges = GetAllGauges();
+    for (const auto& kv : gauges) {
+        doc.AddMember(rapidjson::Value(kv.first, allocator), rapidjson::Value(kv.second),
+                      allocator);
+    }
+
     rapidjson::StringBuffer s;
     RapidWriter writer(s);
     doc.Accept(writer);
